@@ -1,0 +1,47 @@
+{
+  "name": "contextor",
+  "description": "Package allowing to pass a context along an asynchronous process",
+  "version": "0.1.0",
+  "author": "Thomas Prelot <tprelot@gmail.com> (https://github.com/Gnucki)",
+  "contributors": [],
+  "keywords": [
+    "context",
+    "asynchronous",
+    "async",
+    "process",
+    "callback",
+    "promise",
+    "request",
+    "chain"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gnodi/contextor"
+  },
+  "main": "index.js",
+  "scripts": {
+    "check": "gnodi-lint && npm run test-coverage",
+    "check-ci": "npm run lint && npm run test-coveralls",
+    "lint": "gnodi-lint",
+    "lint-fix": "gnodi-lint --fix",
+    "test": "NODE_ENV='test' mocha --recursive index.js test.js",
+    "test-coverage": "nyc npm test && nyc report --reporter text-summary",
+    "test-coveralls": "nyc npm test && nyc report --reporter text-lcov | coveralls",
+    "test-debug": "NODE_ENV='test' mocha --recursive --full-trace --check-leaks index.js test.js",
+    "test-watch": "NODE_ENV='test' mocha -w -b --recursive index.js test.js"
+  },
+  "bin": {},
+  "engines": {
+    "node": ">=8",
+    "npm": ">=5"
+  },
+  "dependencies": {
+  },
+  "devDependencies": {
+    "@gnodi/eslint-config": "^0.4.0",
+    "chai": "^4.2.0",
+    "mocha": "^6.1.4",
+    "nyc": "^14.1.1"
+  }
+}
