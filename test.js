@@ -64,6 +64,21 @@ describe('contextor', () => {
     }, done);
   });
 
+  it('should failed to get a value on a missing context if allowed but no default value is given', (done) => {
+    executeInSpecificAsyncContext(() => {
+      expect(() => contextor.get('foo', undefined, true)).to.throw(
+        ReferenceError,
+        'No current context found; use \'create\' method to create one'
+      );
+    }, done);
+  });
+
+  it('should succeed to get a value on a missing context if allowed and a default value is given', (done) => {
+    executeInSpecificAsyncContext(() => {
+      expect(contextor.get('foo', 'bar', true)).to.equal('bar');
+    }, done);
+  });
+
   it('should pass context along asynchronous resource chain', (done) => {
     const multiDone = buildMultiDone(done);
 

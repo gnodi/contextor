@@ -135,14 +135,31 @@ exports.set = function set(key, value) {
  * Get a value in the current context.
  * @param {string} key - The identifier key.
  * @param {*} defaultValue - The default value to return in case.
+ * @param {boolean} allowUndefinedContext - Whether or not to allow undefined context,
+ *                                          default false.
  * @returns {*} The value or default value for missing key.
  * @throws {ReferenceError} On missing value for given key in current context.
  */
-exports.get = function get(key, defaultValue) {
-  const context = retrieveCurrentContext();
+exports.get = function get(key, defaultValue, allowUndefinedContext = false) {
+  let context;
+  let previousError;
+
+  try {
+    context = retrieveCurrentContext();
+  } catch (error) {
+    if (!allowUndefinedContext || !/^No current context found/.test(error.message)) {
+      throw error;
+    }
+    previousError = error;
+    context = {};
+  }
+
   const exists = key in context;
 
   if (!exists && defaultValue === undefined) {
+    if (previousError) {
+      throw previousError;
+    }
     throw new ReferenceError(`No value found in context for '${key}' key`);
   }
 
