@@ -29,7 +29,9 @@
     "test-coverage": "nyc npm test && nyc report --reporter text-summary",
     "test-coveralls": "nyc npm test && nyc report --reporter text-lcov | coveralls",
     "test-debug": "NODE_ENV='test' mocha --recursive --full-trace --check-leaks index.js test.js",
-    "test-watch": "NODE_ENV='test' mocha -w -b --recursive index.js test.js"
+    "test-watch": "NODE_ENV='test' mocha -w -b --recursive index.js test.js",
+    "preversion": "npm run check",
+    "postversion": "git push && git push --tags"
   },
   "bin": {},
   "engines": {
