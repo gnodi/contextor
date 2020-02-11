@@ -16,6 +16,10 @@ const destroyedResources = {};
  * @see https://nodejs.org/api/asyncHooks.html#asyncHooks_init_asyncid_type_triggerasyncid_resource
  */
 function init(asyncId, type, triggerAsyncId) {
+  if (!triggerAsyncId) {
+    return;
+  }
+
   resourceTree[asyncId] = triggerAsyncId;
 
   if (!(triggerAsyncId in childResources)) {
