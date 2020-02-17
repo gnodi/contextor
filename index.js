@@ -1,6 +1,15 @@
 'use strict';
 
 const asyncHooks = require('async_hooks');
+const v8 = require('v8');
+const vm = require('vm');
+
+let gc = global.gc;
+
+if (!gc) {
+  v8.setFlagsFromString('--expose_gc');
+  gc = vm.runInNewContext('gc');
+}
 
 // Module global variables.
 const resourceTree = {};
@@ -113,6 +122,10 @@ function retrieveCurrentContext() {
   return contexts[asyncId];
 }
 
+let createdContextNumberSinceLastCleanCheck = 0;
+const CLEAN_CHECK_CONTEXT_SIZE = process.env.CONTEXTOR_CLEAN_CHECK_CONTEXT_SIZE || 100;
+const DESTROY_STACK_SIZE = process.env.CONTEXTOR_DESTROY_STACK_SIZE || 1000;
+
 /**
  * Create a new context.
  * @returns {self}
@@ -120,6 +133,17 @@ function retrieveCurrentContext() {
 exports.create = function create() {
   const asyncId = asyncHooks.executionAsyncId();
   contexts[asyncId] = {};
+
+  // Call manual garbage collector execution on garbage stacking.
+  if (createdContextNumberSinceLastCleanCheck >= CLEAN_CHECK_CONTEXT_SIZE) {
+    if (Object.getOwnPropertyNames(destroyedResources).length >= DESTROY_STACK_SIZE) {
+      gc();
+    }
+    createdContextNumberSinceLastCleanCheck = 0;
+  } else {
+    createdContextNumberSinceLastCleanCheck++;
+  }
+
   return this;
 };
 
