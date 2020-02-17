@@ -169,3 +169,42 @@ exports.get = function get(key, defaultValue, allowUndefinedContext = false) {
 
   return exists ? context[key] : defaultValue;
 };
+
+/**
+ * Get an object describing memory usage of the contextor and process
+ * in order to help debugging potential memory leaks.
+ * @returns {object} Memory usage description.
+ */
+exports.getMemoryUsage = function getMemoryUsage() {
+  const resourceTreeSize = Object.getOwnPropertyNames(resourceTree).length;
+  const contextsSize = Object.getOwnPropertyNames(contexts).length;
+  const childResourcesSize = Object.getOwnPropertyNames(childResources).length;
+  const parentResourcesSize = Object.getOwnPropertyNames(parentResources).length;
+  const destroyedResourcesSize = Object.getOwnPropertyNames(destroyedResources).length;
+
+  const memoryUsage = process.memoryUsage();
+  const processMemory = Object.getOwnPropertyNames(memoryUsage).reduce((map, item) => {
+    const mbSize = (Math.round((memoryUsage[item] / 1024 / 1024) * 100) / 100).toFixed(2);
+    // eslint-disable-next-line no-param-reassign
+    map[item] = `${mbSize} MB`;
+    return map;
+  }, {});
+
+  return {
+    processMemory,
+    sizes: {
+      resourceTree: resourceTreeSize,
+      contexts: contextsSize,
+      childResources: childResourcesSize,
+      parentResources: parentResourcesSize,
+      destroyedResources: destroyedResourcesSize
+    },
+    contents: {
+      resourceTree,
+      contexts,
+      childResources,
+      parentResources,
+      destroyedResources
+    }
+  };
+};

@@ -21,6 +21,12 @@ declare namespace contextor {
      * @throws {ReferenceError} On missing value for given key in current context.
      */
     get: (key: string, defaultValue: any, allowUndefinedContext?: boolean) => any;
+    /**
+     * Get an object describing memory usage of the contextor and process
+     * in order to help debugging potential memory leaks.
+     * @returns {object} Memory usage description.
+     */
+    getMemoryUsage: () => object;
   }
 }
 

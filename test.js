@@ -114,4 +114,25 @@ describe('contextor', () => {
       }, multiDone());
     }, multiDone());
   });
+
+  it('should be debuggable', () => {
+    const memoryUsage = contextor.getMemoryUsage();
+
+    expect(Object.getOwnPropertyNames(memoryUsage)).to.deep.equal(['processMemory', 'sizes', 'contents']);
+    expect(Object.getOwnPropertyNames(memoryUsage.processMemory)).to.deep.equal(['rss', 'heapTotal', 'heapUsed', 'external']);
+    expect(Object.getOwnPropertyNames(memoryUsage.sizes)).to.deep.equal([
+      'resourceTree',
+      'contexts',
+      'childResources',
+      'parentResources',
+      'destroyedResources'
+    ]);
+    expect(Object.getOwnPropertyNames(memoryUsage.contents)).to.deep.equal([
+      'resourceTree',
+      'contexts',
+      'childResources',
+      'parentResources',
+      'destroyedResources'
+    ]);
+  });
 });

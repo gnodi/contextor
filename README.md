@@ -62,6 +62,7 @@ app.listen(3000);
   - [Create a context](#create-a-context)
   - [Set a value in the current context](#set-a-value-in-the-current-context)
   - [Get a value in the current context](#get-a-value-in-the-current-context)
+- [Debugging](#debugging)
 - [Testing](#testing)
 - [Contributing](#contributing)
 - [License](#license)
@@ -95,7 +96,7 @@ contextor.set('foo', 'bar');
 ```
 
 ### Get a value in the current context
-You can get a value of the current context.
+You can get a value of the current context:
 ```js
 contextor.get('foo');
 ```
@@ -104,6 +105,21 @@ This will throw a `ReferenceError` if the key does not exist.
 Instead, you can specify a default value in case the key does not exist:
 ```js
 contextor.get('foo', 'bar');
+```
+
+### Debugging
+Contextor create context for async hooks. A bad usage can lead to memory leaks.<br>
+Function `getMemoryUsage` has been build to help you investigate that kind of issue:
+```js
+const { inspect } = require('util');
+
+const memoryUsage = contextor.getMemoryUsage();
+
+console.log(inspect(memoryUsage, {
+  compact: false,
+  colors: true,
+  depth: 6,
+}));
 ```
 
 ## Testing
