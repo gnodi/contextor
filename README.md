@@ -62,6 +62,7 @@ app.listen(3000);
   - [Create a context](#create-a-context)
   - [Set a value in the current context](#set-a-value-in-the-current-context)
   - [Get a value in the current context](#get-a-value-in-the-current-context)
+  - [Customize cleaning](#customize-cleaning)
 - [Debugging](#debugging)
 - [Testing](#testing)
 - [Contributing](#contributing)
@@ -106,6 +107,11 @@ Instead, you can specify a default value in case the key does not exist:
 ```js
 contextor.get('foo', 'bar');
 ```
+
+### Customize cleaning
+Some environment variables are available in order to customize context cleaning:
+- `CONTEXTOR_CLEAN_CHECK_CONTEXT_SIZE`: number of created contexts before a cleaning is executed (default: 100)
+- `CONTEXTOR_CONTEXT_TTL`: TTL of contexts in ms; set to 0 to make it infinite (default: 6e4)
 
 ### Debugging
 Contextor create context for async hooks. A bad usage can lead to memory leaks.<br>

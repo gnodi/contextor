@@ -135,4 +135,36 @@ describe('contextor', () => {
       'destroyedResources'
     ]);
   });
+
+  it('should clean expired contexts', (done) => {
+    let memoryUsage = contextor.getMemoryUsage();
+
+    expect(memoryUsage.sizes.contexts).to.be.greaterThan(1);
+
+    setTimeout(() => {
+      contextor.create();
+      contextor.create();
+      memoryUsage = contextor.getMemoryUsage();
+
+      expect(memoryUsage.sizes.contexts).equal(1);
+
+      setTimeout(() => {
+        contextor.create();
+        contextor.create();
+        memoryUsage = contextor.getMemoryUsage();
+
+        expect(memoryUsage.sizes.contexts).equal(1);
+
+        done();
+      }, 400);
+    }, 400);
+
+    setTimeout(() => {
+      contextor.create();
+      contextor.create();
+      memoryUsage = contextor.getMemoryUsage();
+
+      expect(memoryUsage.sizes.contexts).equal(2);
+    }, 500);
+  });
 });

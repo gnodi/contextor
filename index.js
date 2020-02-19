@@ -5,9 +5,56 @@ const asyncHooks = require('async_hooks');
 // Module global variables.
 const resourceTree = {};
 const contexts = {};
+const contextAges = {};
 const childResources = {};
 const parentResources = {};
 const destroyedResources = {};
+
+let createdContextNumberSinceLastCleanCheck = 0;
+
+const CLEAN_CHECK_CONTEXT_SIZE = process.env.CONTEXTOR_CLEAN_CHECK_CONTEXT_SIZE || 100;
+const CONTEXT_TTL = process.env.CONTEXTOR_CONTEXT_TTL || 6e4;
+
+/**
+ * Retrieve context id for an async resource.
+ * @param {number} asyncId - The resource id.
+ * @returns {number|undefined} The context id or undefined if not in a context.
+ */
+function retrieveContextId(asyncId) {
+  let contextId = asyncId;
+
+  while (contextId !== undefined && !(contextId in contexts)) {
+    contextId = resourceTree[contextId];
+  }
+
+  return contextId;
+}
+
+/**
+ * Retrieve current context id.
+ * @returns {number|undefined} The current context id or undefined if not in a context.
+ */
+function retrieveCurrentContextId() {
+  return retrieveContextId(asyncHooks.executionAsyncId());
+}
+
+/**
+ * Retrieve current context.
+ * @returns {Object} The current context.
+ * @throws {ReferenceError} On missing current context.
+ */
+function retrieveCurrentContext() {
+  const asyncId = retrieveCurrentContextId();
+  const exists = asyncId in contexts;
+
+  if (!exists) {
+    throw new ReferenceError(
+      'No current context found; use \'create\' method to create one'
+    );
+  }
+
+  return contexts[asyncId];
+}
 
 /**
  * Async hook init callback.
@@ -16,10 +63,6 @@ const destroyedResources = {};
  * @see https://nodejs.org/api/asyncHooks.html#asyncHooks_init_asyncid_type_triggerasyncid_resource
  */
 function init(asyncId, type, triggerAsyncId) {
-  if (!triggerAsyncId) {
-    return;
-  }
-
   resourceTree[asyncId] = triggerAsyncId;
 
   if (!(triggerAsyncId in childResources)) {
@@ -43,7 +86,7 @@ function init(asyncId, type, triggerAsyncId) {
 function destroy(asyncId) {
   destroyedResources[asyncId] = true;
 
-  // Clean memory.
+  // Clean memory references.
   const resources = [asyncId].concat(parentResources[asyncId]);
 
   resources.reduce((cleanedChildAsyncId, parentAsyncId) => {
@@ -63,10 +106,12 @@ function destroy(asyncId) {
 
     const hasChildren = hadChildren && childResources[parentAsyncId].length !== 0;
     const destroyed = parentAsyncId in destroyedResources;
+    const hasContext = !!retrieveContextId(parentAsyncId);
 
-    if (!hasChildren && destroyed) {
+    if ((!hasChildren && destroyed) || !hasContext) {
       delete resourceTree[parentAsyncId];
       delete contexts[parentAsyncId];
+      delete contextAges[parentAsyncId];
       delete childResources[parentAsyncId];
       delete parentResources[parentAsyncId];
       delete destroyedResources[parentAsyncId];
@@ -82,35 +127,27 @@ const asyncHook = asyncHooks.createHook({init, destroy});
 asyncHook.enable();
 
 /**
- * Retrieve current context id.
- * @returns {number|undefined} The current context id.
+ * Clean deprecated and useless resources.
  */
-function retrieveCurrentContextId() {
-  let asyncId = asyncHooks.executionAsyncId();
+function cleanResources() {
+  const now = Date.now();
 
-  while (asyncId !== undefined && !(asyncId in contexts)) {
-    asyncId = resourceTree[asyncId];
+  // Clean expired contexts (in case a destroy has not been fired).
+  if (CONTEXT_TTL) {
+    Object.getOwnPropertyNames(contexts).forEach((asyncId) => {
+      if (now - contextAges[asyncId] >= CONTEXT_TTL) {
+        delete contexts[asyncId];
+        delete contextAges[asyncId];
+      }
+    });
   }
 
-  return asyncId;
-}
-
-/**
- * Retrieve current context.
- * @returns {Object} The current context.
- * @throws {ReferenceError} On missing current context.
- */
-function retrieveCurrentContext() {
-  const asyncId = retrieveCurrentContextId();
-  const exists = asyncId in contexts;
-
-  if (!exists) {
-    throw new ReferenceError(
-      'No current context found; use \'create\' method to create one'
-    );
-  }
-
-  return contexts[asyncId];
+  // Clean resources not attached to a context.
+  Object.getOwnPropertyNames(resourceTree).forEach((asyncId) => {
+    if (!retrieveContextId(asyncId)) {
+      destroy(asyncId);
+    }
+  });
 }
 
 /**
@@ -120,6 +157,13 @@ function retrieveCurrentContext() {
 exports.create = function create() {
   const asyncId = asyncHooks.executionAsyncId();
   contexts[asyncId] = {};
+  contextAges[asyncId] = Date.now();
+
+  if (++createdContextNumberSinceLastCleanCheck >= CLEAN_CHECK_CONTEXT_SIZE) {
+    cleanResources();
+    createdContextNumberSinceLastCleanCheck = 0;
+  }
+
   return this;
 };
 
