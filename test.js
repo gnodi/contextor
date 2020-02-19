@@ -119,7 +119,7 @@ describe('contextor', () => {
     const memoryUsage = contextor.getMemoryUsage();
 
     expect(Object.getOwnPropertyNames(memoryUsage)).to.deep.equal(['processMemory', 'sizes', 'contents']);
-    expect(Object.getOwnPropertyNames(memoryUsage.processMemory)).to.deep.equal(['rss', 'heapTotal', 'heapUsed', 'external']);
+    expect(memoryUsage.processMemory).to.haveOwnProperty('heapUsed');
     expect(Object.getOwnPropertyNames(memoryUsage.sizes)).to.deep.equal([
       'resourceTree',
       'contexts',
